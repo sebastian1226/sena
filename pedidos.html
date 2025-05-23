@@ -428,7 +428,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}`, {
+                const response = await fetch(`http://localhost:3002/api/pedidos/${pedidoId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -482,7 +482,7 @@
                 return;
             }
             try {
-                const res = await fetch(`http://localhost:3000/api/menu/${productoId}`);
+                const res = await fetch(`http://localhost:3002/api/menu/${productoId}`);
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.mensaje || `Error HTTP! estado: ${res.status}`);
@@ -537,11 +537,11 @@
 
                 if (pedidoIdSeleccionado) {
                     // Adding to an existing order
-                    endpoint = `http://localhost:3000/api/pedidos/${pedidoIdSeleccionado}/agregar-producto`;
+                    endpoint = `http://localhost:3002/api/pedidos/${pedidoIdSeleccionado}/agregar-producto`;
                     bodyContent = JSON.stringify({ productoId, precioId, cantidad });
                 } else {
                     // Creating a new order with the product
-                    endpoint = `http://localhost:3000/api/pedidos`;
+                    endpoint = `http://localhost:3002/api/pedidos`;
                     bodyContent = JSON.stringify({ productoId, precioId, cantidad });
                 }
                 
@@ -574,7 +574,7 @@
             facturasContainer.innerHTML = '<p style="text-align: center; color: #555;">Cargando pedidos...</p>'; // Mensaje de carga
 
             try {
-                const res = await fetch('http://localhost:3000/api/pedidos/en-preparacion'); // Obtiene solo pedidos en preparación
+                const res = await fetch('http://localhost:3002/api/pedidos/en-preparacion'); // Obtiene solo pedidos en preparación
                 if (!res.ok) {
                     throw new Error(`Error HTTP! estado: ${res.status}`);
                 }
