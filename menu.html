@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menú del Restaurante</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="carta.css" />
+</head>
+<style>
+    /* Menú inferior */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    display: flex;
+    border-top: 1px solid #ccc;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+  }
+  
+  .nav-item {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    color: #666;
+    text-decoration: none;
+    font-size: 13px;
+    transition: 0.3s;
+  }
+  
+  .nav-item i {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  
+  .nav-item.active,
+  .nav-item:hover {
+    color: #007bff;
+    font-weight: bold;
+  }
+</style>
+<body>
+  <h1>Lista de Comida</h1>
+
+    <!-- Menú inferior -->
+  <nav class="bottom-nav">
+    <a href="/index.html" class="nav-item active">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="/pedidos.html" class="nav-item">
+      <i class="fas fa-receipt"></i>
+      <span>Pedidos</span>
+    </a>
+    <a href="/carta.html" class="nav-item">
+      <i class="fas fa-utensils"></i>
+      <span>Carta</span>
+    </a>
+    <a href="/menu.html" class="nav-item">
+      <i class="fas fa-cog"></i>
+      <span>Config</span>
+    </a>
+  </nav>
+
+  <div class="tabla-contenedor">
+    <table id="tablaComidas">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Comida</th>
+          <th>Clasificación</th>
+          <th>Precio</th>
+          <th>Descripción</th>
+          <th>Categoría</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Aquí se cargarán las comidas dinámicamente -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal para confirmación de eliminación -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2>Confirmar Eliminación</h2>
+      <p>¿Qué tipo de eliminación desea realizar para "<span id="comidaToDeleteNombre"></span>"?</p>
+      <div class="modal-buttons">
+        <button id="deleteByTamanoBtn">Eliminar por Clasificación/Tamaño</button>
+        <button id="deleteAllBtn">Eliminar Definitivamente</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('comidaForm');
+    const tabla = document.querySelector('#tablaComidas tbody');
+
+    const modal = document.getElementById('deleteModal');
+    const closeButton = document.querySelector('.close-button');
+    const deleteByTamanoBtn = document.getElementById('deleteByTamanoBtn');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    const comidaToDeleteNombreSpan = document.getElementById('comidaToDeleteNombre');
+
+    const API_URL = 'http://localhost:3000/api/comidas';
+
+    let currentComidaId = null; // To store the ID of the food item being considered for deletion
+    let currentComidaNombre = null; // To store the name of the food item for the modal message
+
+    /**
+     * Loads food items from the API and populates the table.
+     */
+    async function cargarComidas() {
+      tabla.innerHTML = ''; // Clear existing table rows
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const comidas = await response.json();
+
+        comidas.forEach(comida => {
+          // Ensure prices is a valid array, if not, use a default one
+          const preciosMostrar = comida.precios && comida.precios.length > 0 ? comida.precios : [{ tamano: 'Único', precio: 0 }];
+          const numFilasParaComida = preciosMostrar.length;
+          let esPrimeraFilaDeComida = true; // Flag to handle rowspan for the first row of each food item
+
+          preciosMostrar.forEach((p) => {
+            const newRow = document.createElement('tr');
+            let filaHTML = '';
+
+            // Validate that the price is a number to avoid $NaN
+            const displayPrecio = typeof p.precio === 'number' ? `$${p.precio.toFixed(2)}` : 'N/A';
+
+            if (esPrimeraFilaDeComida) {
+              // For the first row of a food item, apply rowspan to common cells
+              filaHTML += `
+                <td rowspan="${numFilasParaComida}">${comida._id}</td>
+                <td rowspan="${numFilasParaComida}">${comida.nombre}</td>
+                <td>${p.tamano || 'Único'}</td>
+                <td>${displayPrecio}</td>
+                <td rowspan="${numFilasParaComida}">${comida.descripcion || 'Sin descripción'}</td>
+                <td rowspan="${numFilasParaComida}">${comida.categoria || 'Sin categoría'}</td>
+                <td rowspan="${numFilasParaComida}"><button class="delete-btn" data-id="${comida._id}" data-nombre="${comida.nombre}">Eliminar</button></td>
+              `;
+              esPrimeraFilaDeComida = false; // Set to false after the first row
+            } else {
+              // For subsequent rows of the same food item, only display size and price
+              filaHTML += `
+                <td>${p.tamano || 'Único'}</td>
+                <td>${displayPrecio}</td>
+              `;
+            }
+            newRow.innerHTML = filaHTML;
+            tabla.appendChild(newRow);
+          });
+        });
+      } catch (error) {
+        console.error('Error al cargar las comidas:', error);
+        alert('Error al cargar las comidas.');
+      }
+    }
+
+    /**
+     * Handles click events on the table, specifically for delete buttons.
+     * Opens the modal when a delete button is clicked.
+     */
+    tabla.addEventListener('click', async function (e) {
+      if (e.target.classList.contains('delete-btn')) {
+        currentComidaId = e.target.dataset.id; // Store the ID of the food item
+        currentComidaNombre = e.target.dataset.nombre; // Store the name for the modal message
+        comidaToDeleteNombreSpan.textContent = currentComidaNombre; // Set the name in the modal
+        modal.style.display = 'flex'; // Show the modal (using flex to center it)
+      }
+    });
+
+    /**
+     * Closes the modal when the 'x' (close button) is clicked.
+     */
+    closeButton.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    /**
+     * Closes the modal when clicking outside of the modal content.
+     */
+    window.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    /**
+     * Handles the "Eliminar Definitivamente" (Delete Permanently) button click in the modal.
+     */
+    deleteAllBtn.addEventListener('click', async () => {
+      if (currentComidaId) {
+        if (confirm(`¿Estás seguro de que quieres eliminar DEFINITIVAMENTE la comida "${currentComidaNombre}"?`)) {
+          try {
+            const response = await fetch(`${API_URL}/${currentComidaId}`, {
+              method: 'DELETE'
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.mensaje || `HTTP error! status: ${response.status}`);
+            }
+
+            alert('Comida eliminada definitivamente.');
+            modal.style.display = 'none'; // Hide the modal
+            cargarComidas(); // Reload the table
+          } catch (error) {
+            console.error('Error al eliminar la comida definitivamente:', error);
+            alert(`Error al eliminar la comida definitivamente: ${error.message}`);
+          }
+        }
+      }
+    });
+
+    /**
+     * Handles the "Eliminar por Clasificación/Tamaño" (Delete by Classification/Size) button click in the modal.
+     */
+    deleteByTamanoBtn.addEventListener('click', async () => {
+      if (currentComidaId) {
+        const tamanoAEliminar = prompt(`Introduce la clasificación/tamaño exacto que quieres eliminar para "${currentComidaNombre}":`);
+        if (tamanoAEliminar !== null && tamanoAEliminar.trim() !== '') {
+          try {
+            const response = await fetch(`${API_URL}/${currentComidaId}/precios/${encodeURIComponent(tamanoAEliminar)}`, {
+              method: 'DELETE'
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.mensaje || `HTTP error! status: ${response.status}`);
+            }
+
+            alert(`Clasificación/Tamaño "${tamanoAEliminar}" de "${currentComidaNombre}" eliminada.`);
+            modal.style.display = 'none'; // Hide the modal
+            cargarComidas(); // Reload the table
+          } catch (error) {
+            console.error('Error al eliminar por clasificación/tamaño:', error);
+            alert(`Error al eliminar por clasificación/tamaño: ${error.message}`);
+          }
+        } else if (tamanoAEliminar !== null) {
+          alert('La clasificación/tamaño no puede estar vacía.');
+        }
+      }
+    });
+
+    // Load meals when the DOM content is fully loaded
+    document.addEventListener('DOMContentLoaded', cargarComidas);
+  </script>
+</body>
+</html>
