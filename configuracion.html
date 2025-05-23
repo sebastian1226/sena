@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administrador - Configuraciones</title>
+  <link rel="stylesheet" href="/configuracion.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 6px 20px rgba(0,0,0,0.19);
+      animation: animatetop 0.4s;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .modal-content form label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .modal-content form input,
+    .modal-content form select {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .modal-content form input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .modal-content form button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    .modal-content form button:hover {
+      background-color: #45a049;
+    }
+    .modal-content form button[style*="background-color: #dc3545;"] {
+      background-color: #dc3545 !important;
+    }
+    .modal-content form button[style*="background-color: #dc3545;"]:hover {
+      background-color: #c82333 !important;
+    }
+
+    @keyframes animatetop {
+      from {top: -300px; opacity: 0;}
+      to {top: 0; opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="profile-container">
+      <img src="https://via.placeholder.com/60" alt="Foto perfil" />
+      <h3>Administrador Juan Pérez</h3>
+    </div>
+    <ul>
+      <li><a href="index.html"><i class="fas fa-cog"></i>Ir a inicio</a></li>
+      <li><a href="#general-config"><i class="fas fa-cog"></i> Configuración General</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="general-config" class="section fade-in">
+      <h2><i class="fas fa-cogs"></i> Configuración General (Técnica)</h2>
+      <button id="toggle-theme">Cambiar Tema (Claro/Oscuro)</button>
+      <br /><br />
+      <label for="language-select">Cambiar Idioma:</label>
+      <select id="language-select">
+        <option value="es">Español</option>
+        <option value="en">Inglés</option>
+      </select>
+      <br /><br />
+      <label for="color-palette-select">Paleta de Colores:</label>
+      <select id="color-palette-select">
+        <option value="default">Predeterminado</option>
+        <option value="blue">Azul Empresarial</option>
+        <option value="green">Verde Naturaleza</option>
+        <option value="red">Rojo Vibrante</option>
+      </select>
+      <br /><br />
+      <label for="font-select">Fuentes y Tipografía:</label>
+      <select id="font-select">
+        <option value="Arial">Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Lato">Lato</option>
+      </select>
+      <br /><br />
+      <button data-modal="modal-sound-settings">Ajustes de Sonido</button>
+      <br /><br />
+      <button data-modal="modal-notifications">Configuración de Notificaciones</button>
+      <br /><br />
+      <button data-modal="modal-printer">Configuración de Impresora</button>
+      <br /><br />
+      <button data-modal="modal-api-integrations">Integraciones API</button>
+      <br /><br />
+      <button data-modal="modal-security">Seguridad y Acceso</button>
+      <br /><br />
+      <button data-modal="modal-backup-options">Opciones de Backup</button>
+      <br /><br />
+      <button data-modal="modal-data-management">Gestión de Datos</button>
+      <br /><br />
+      <button data-modal="modal-reset-config" style="background-color: #dc3545;">Restablecer Configuración</button>
+    </section>
+  </main>
+
+  <!-- Modales usados por Configuración General -->
+  <div id="modal-sound-settings" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Ajustes de Sonido</h3>
+      <form>
+        <label for="new-order-sound">Sonido de Nuevo Pedido:</label>
+        <select id="new-order-sound">
+          <option value="bell">Campana</option>
+          <option value="ding">Ding</option>
+          <option value="chime">Chime</option>
+          <option value="none">Ninguno</option>
+        </select>
+        <label for="volume-control">Volumen General:</label>
+        <input type="range" id="volume-control" min="0" max="100" value="70">
+        <button type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-notifications" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Configuración de Notificaciones</h3>
+      <form>
+        <label><input type="checkbox" checked> Notificar nuevos pedidos</label><br>
+        <label><input type="checkbox"> Notificar nuevas reservas</label><br>
+        <label><input type="checkbox"> Notificar stock bajo</label><br>
+        <label for="notification-method">Método de Notificación:</label>
+        <select id="notification-method">
+          <option value="in-app">En la aplicación</option>
+          <option value="email">Email</option>
+          <option value="sms">SMS</option>
+        </select>
+        <button type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-printer" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Configuración de Impresora</h3>
+      <form>
+        <label for="printer-ip">Dirección IP de la Impresora:</label>
+        <input type="text" id="printer-ip" placeholder="Ej: 192.168.1.100">
+        <label><input type="checkbox"> Impresión automática de pedidos</label><br>
+        <label><input type="checkbox"> Impresión automática de facturas</label><br>
+        <button type="submit">Guardar</button>
+        <button type="button">Probar Impresión</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-api-integrations" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Integraciones API</h3>
+      <form>
+        <label>Rappi / Uber Eats API Key:</label>
+        <input type="text" placeholder="Ingresar clave API">
+        <label><input type="checkbox"> Sincronizar menú automáticamente</label><br>
+        <button type="submit">Conectar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-security" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Seguridad y Acceso</h3>
+      <form>
+        <label><input type="checkbox" checked> Requiere contraseña para ajustes críticos</label><br>
+        <label><input type="checkbox"> Doble autenticación (2FA)</label><br>
+        <label for="session-timeout">Tiempo de expiración de sesión (minutos):</label>
+        <input type="number" id="session-timeout" min="1" value="15">
+        <button type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-backup-options" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Opciones de Backup</h3>
+      <form>
+        <label><input type="checkbox" checked> Hacer copia de seguridad diaria</label><br>
+        <label><input type="checkbox"> Copia de seguridad en la nube</label><br>
+        <label for="backup-frequency">Frecuencia:</label>
+        <select id="backup-frequency">
+          <option value="daily">Diario</option>
+          <option value="weekly">Semanal</option>
+          <option value="monthly">Mensual</option>
+        </select>
+        <button type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-data-management" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3>Gestión de Datos</h3>
+      <form>
+        <label><input type="checkbox"> Eliminar datos antiguos automáticamente</label><br>
+        <label for="data-retention">Tiempo de retención (meses):</label>
+        <input type="number" id="data-retention" min="1" value="6">
+        <button type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-reset-config" class="modal">
+    <div class="modal-content">
+      <span class="close" data-close>&times;</span>
+      <h3 style="color: red;">Restablecer Configuración</h3>
+      <p>¿Estás seguro de que deseas restablecer la configuración a los valores predeterminados?</p>
+      <form>
+        <button type="submit" style="background-color: #dc3545;">Sí, Restablecer</button>
+        <button type="button" data-close>Cancelar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('button[data-modal]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = document.getElementById(btn.dataset.modal);
+        if (modal) modal.style.display = 'flex';
+      });
+    });
+    document.querySelectorAll('.close, [data-close]').forEach(el => {
+      el.addEventListener('click', () => {
+        el.closest('.modal').style.display = 'none';
+      });
+    });
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+      }
+    };
+  </script>
+</body>
+</html>

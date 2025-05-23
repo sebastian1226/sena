@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard de Pedidos</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Font Awesome (íconos) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+</head>
+<body>
+
+  <h1>📊 Dashboard de Pedidos</h1>
+
+  <div id="fechaActual" style="text-align:center; font-weight:bold; margin-bottom: 20px; font-size: 1.2em;"></div>
+
+  <div class="charts">
+    <canvas id="ventasPorDia"></canvas>
+    <canvas id="pedidosPorDia"></canvas>
+    <canvas id="estadoPedidos"></canvas>
+  </div>
+
+  <!-- Menú inferior -->
+  <nav class="bottom-nav">
+    <a href="/index.html" class="nav-item active">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="/pedidos.html" class="nav-item">
+      <i class="fas fa-receipt"></i>
+      <span>Pedidos</span>
+    </a>
+    <a href="/carta.html" class="nav-item">
+      <i class="fas fa-utensils"></i>
+      <span>Add</span>
+    </a>
+    <a href="/menu.html" class="nav-item">
+      <i class="fas fa-burger"></i>
+      <span>Menu</span>
+    </a>
+  </nav>
+
+  <!-- Lógica del dashboard -->
+  <script src="/dashboard.js"></script>
+</body>
+</html>

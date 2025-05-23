@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        /* Global box-sizing for consistent layout */
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Estilos generales del cuerpo */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            background-color: #f5f5f5; 
+            padding-bottom: 80px; /* Espacio para la barra de navegación inferior */
+        }
+        
+        /* Estilos para la tarjeta de factura individual */
+        .factura-card {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .factura-card h2 { 
+            text-align: center; 
+            margin-bottom: 10px; 
+            color: #333;
+        }
+        .info p { 
+            margin: 4px 0; 
+            color: #555;
+        }
+        
+        /* Estilos de la tabla de ítems */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+        }
+        th, td { 
+            text-align: left; 
+            padding: 10px; 
+            border-bottom: 1px solid #ddd; 
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #444;
+        }
+        
+        /* Estilo para el total */
+        .total { 
+            text-align: right; 
+            font-size: 1.2em; 
+            font-weight: bold; 
+            color: #333;
+            margin-top: 15px;
+        }
+        
+        /* Estilo para el estado del pedido */
+        .estado {
+            text-align: center;
+            padding: 10px;
+            background: #ffe08a; /* Color de fondo para el estado */
+            border-radius: 5px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #a06a00;
+        }
+        .estado.entregado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        /* Estilo para el pie de página de la factura */
+        .footer { 
+            text-align: center; 
+            font-size: 0.9em; 
+            color: #777; 
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        
+        /* Estilos para la barra de navegación inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            display: flex;
+            border-top: 1px solid #ccc;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-item i { 
+            display: block; 
+            font-size: 20px; 
+            margin-bottom: 4px; 
+        }
+        .nav-item.active, .nav-item:hover { 
+            color: #007bff; 
+            font-weight: bold; 
+        }
+        
+        /* Estilos para el botón "Añadir" en la navegación */
+        .nav-item.add {
+            background-color: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 10px;
+            transform: translateY(-20%); /* Eleva el botón "Añadir" */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease-in-out;
+        }
+        .nav-item.add:hover {
+            transform: translateY(-25%) scale(1.05);
+        }
+        .nav-item.add i { 
+            font-size: 30px; 
+            margin-bottom: 0; /* Elimina margen inferior para centrar */
+        }
+        
+        /* Estilos generales de los modales */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed; /* Posicionamiento fijo */
+            z-index: 1000; /* Por encima de otros elementos */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente más oscuro */
+            overflow: auto; /* Permite scroll si el contenido es muy largo */
+            justify-content: center; /* Centra el contenido horizontalmente */
+            align-items: center; /* Centra el contenido verticalmente */
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto; /* Margen superior e inferior automático para centrar verticalmente */
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%; /* Ancho predeterminado relativo */
+            max-width: 400px; /* Ancho máximo */
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilos para botones dentro de modales */
+        .modal-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff; /* Default button color */
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%; /* Ocupa todo el ancho */
+            box-sizing: border-box; /* Incluye padding y border en el ancho */
+            transition: background-color 0.2s ease;
+        }
+        .modal-button:hover { 
+            background-color: #0056b3; 
+        }
+        .modal-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* Estilos para el botón de cerrar modal */
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 15px; /* Ajustado para un mejor espaciado */
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .close:hover, .close:focus { 
+            color: black; 
+            text-decoration: none; 
+        }
+
+        /* Estilos para los inputs dentro del modal */
+        .modal-content input[type="text"],
+        .modal-content input[type="number"] { 
+            width: calc(100% - 20px); /* Ajusta el ancho considerando el padding */
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .modal-content label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* New CSS Classes for buttons and price cards */
+        .price-card {
+            min-width: 180px; /* Más pequeño para móviles */
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+        .price-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .price-card-button {
+            margin-top: auto; /* For the select button within the card */
+            background-color: #007bff;
+        }
+        .price-card-button:hover {
+            background-color: #0056b3;
+        }
+
+        .add-product-button {
+            background-color: #28a745; /* Green for adding products */
+            margin-top: 15px; /* Espacio entre los botones y el footer */
+        }
+        .add-product-button:hover {
+            background-color: #218838;
+        }
+
+        .mark-delivered-button {
+            background-color: #007bff; /* Blue for marking as delivered */
+            margin-left: 10px; 
+            margin-top: 15px; /* Espacio entre los botones y el footer */
+        }
+        .mark-delivered-button:hover {
+            background-color: #0056b3;
+        }
+        .mark-delivered-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Styles for confirmation modal buttons layout */
+        .modal-confirm-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            gap: 10px; /* Espacio entre los botones */
+        }
+        .modal-confirm-buttons button {
+            flex: 1; /* Para que ocupen el mismo ancho */
+        }
+
+        /* Responsive adjustments for modals */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 90%;
+                margin: 5% auto;
+            }
+        }
+        @media (max-width: 480px) {
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            .modal-button {
+                font-size: 14px;
+                padding: 8px;
+            }
+            .price-card {
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="bottom-nav">
+        <a href="/index.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+        <a href="/pedidos.html" class="nav-item active"><i class="fas fa-receipt"></i><span>Pedidos</span></a>
+        <a href="#" class="nav-item add" id="addPedidoButton"><i class="fas fa-plus"></i></a>
+        <a href="/carta.html" class="nav-item"><i class="fas fa-utensils"></i><span>Add</span></a>
+        <a href="/menu.html" class="nav-item"><i class="fas fa-burger"></i><span>Menu</span></a>
+    </nav>
+
+    <div id="addPedidoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAddModal">&times;</span>
+            <h3>Añadir Producto al Pedido</h3>
+            <form id="addPedidoForm">
+                <label for="productoId">ID del Producto:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="productoId" name="productoId" style="flex: 1;" placeholder="Ej: 60d7f2b1a1b8c9d0e1f2b3c4">
+                    <button type="button" onclick="cargarPrecios()" class="modal-button add-product-button" style="width: auto;">Buscar</button>
+                </div>
+                <label for="cantidadProducto" style="margin-top: 10px;">Cantidad:</label>
+                <input type="number" id="cantidadProducto" name="cantidadProducto" value="1" min="1">
+            </form>
+        </div>
+    </div>
+
+    <div id="preciosModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" onclick="cerrarPreciosModal()">&times;</span>
+            <h3>Selecciona un precio</h3>
+            <div id="preciosContainer" style="display: flex; overflow-x: auto; gap: 15px; padding: 15px; scrollbar-width: thin; scrollbar-color: #888 #f1f1f1;"></div>
+        </div>
+    </div>
+
+    <div id="confirmDeliveryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeConfirmDeliveryModal">&times;</span>
+            <h3>Confirmar Entrega</h3>
+            <p>¿Estás seguro de que quieres marcar este pedido como **entregado**?</p>
+            <div class="modal-confirm-buttons">
+                <button id="cancelDeliveryButton" class="modal-button" style="background-color: #dc3545;">Cancelar</button>
+                <button id="confirmDeliveryButton" class="modal-button" style="background-color: #28a745;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="facturas-container"></div>
+
+    <script>
+        // Variables globales para gestionar el estado de los modales y pedidos
+        let pedidoIdSeleccionado = null; // ID del pedido seleccionado para añadir un producto
+        let pedidoIdToConfirm = null; // ID of the order pending confirmation for delivery
+
+        // Get references to the new modal and its buttons
+        const confirmDeliveryModal = document.getElementById('confirmDeliveryModal');
+        const closeConfirmDeliveryModal = document.getElementById('closeConfirmDeliveryModal');
+        const cancelDeliveryButton = document.getElementById('cancelDeliveryButton');
+        const confirmDeliveryButton = document.getElementById('confirmDeliveryButton');
+
+
+        // Event listener para abrir el modal de añadir producto desde el botón flotante
+        document.getElementById('addPedidoButton').onclick = () => {
+            pedidoIdSeleccionado = null; // Reiniciar el ID del pedido seleccionado para crear un nuevo pedido
+            document.getElementById('productoId').value = ""; // Limpiar el campo de ID de producto
+            document.getElementById('cantidadProducto').value = "1"; // Reset quantity input
+            document.getElementById('addPedidoModal').style.display = "flex"; // Mostrar el modal (usar flex para centrar)
+        };
+
+        // Event listener para cerrar el modal de añadir producto
+        document.getElementById('closeAddModal').onclick = () => {
+            document.getElementById('addPedidoModal').style.display = "none";
+        };
+
+        // Función para cerrar el modal de precios
+        function cerrarPreciosModal() {
+            document.getElementById('preciosModal').style.display = "none";
+        }
+
+        // Function to open the confirmation modal for delivery
+        function openConfirmDeliveryModal(pedidoId) {
+            console.log("🔵 Frontend (openConfirmDeliveryModal): Abrir modal para ID:", pedidoId); // Debugging
+            pedidoIdToConfirm = pedidoId; // Store the ID
+            confirmDeliveryModal.style.display = "flex";
+        }
+
+        // Event listener to close the confirmation modal
+        closeConfirmDeliveryModal.onclick = () => {
+            confirmDeliveryModal.style.display = "none";
+            pedidoIdToConfirm = null; // Clear the ID when closed
+        };
+
+        // Event listener for the "Cancelar" button in the confirmation modal
+        cancelDeliveryButton.onclick = () => {
+            confirmDeliveryModal.style.display = "none";
+            pedidoIdToConfirm = null; // Clear the ID when canceled
+        };
+
+        /**
+         * Performs the action of marking a pedido as 'entregado' in the database.
+         * This function is now triggered by the "Confirmar" button in the custom modal.
+         */
+        async function performMarkAsDelivered(pedidoId) {
+            console.log("🔵 Frontend: Intentando marcar como entregado el pedido con ID:", pedidoId);
+            console.log("🔵 Frontend: Tipo de ID:", typeof pedidoId);
+            console.log("🔵 Frontend: Longitud de ID:", pedidoId ? pedidoId.length : 'N/A');
+
+            // Validación básica del ID antes de enviar al backend
+            if (!pedidoId || typeof pedidoId !== 'string' || pedidoId.trim() === '') {
+                alert('Error: ID de pedido no válido para marcar como entregado.');
+                // Aquí podrías cerrar el modal de confirmación si no se cerró ya.
+                confirmDeliveryModal.style.display = "none";
+                pedidoIdToConfirm = null;
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.mensaje || 'Error al actualizar el estado del pedido');
+                }
+
+                const data = await response.json();
+                alert(data.mensaje);
+                cargarFacturas(); // Recargar los pedidos después de la actualización
+            } catch (error) {
+                console.error('❌ Frontend: Error al marcar como entregado:', error);
+                alert('Error al marcar como entregado: ' + error.message);
+            } finally {
+                // Asegúrate de cerrar el modal de confirmación si aún está abierto
+                confirmDeliveryModal.style.display = "none";
+                pedidoIdToConfirm = null;
+            }
+        }
+
+        // Attach the main action to the confirm button, ensuring the correct ID is passed
+        confirmDeliveryButton.onclick = () => {
+            // No cierres el modal aquí, deja que performMarkAsDelivered lo haga en su 'finally' o 'try/catch'
+            performMarkAsDelivered(pedidoIdToConfirm);
+            // No limpiar pedidoIdToConfirm aquí, se limpia dentro de performMarkAsDelivered
+        };
+
+
+        /**
+         * Abre el modal para añadir un producto a un pedido existente.
+         * @param {string} pedidoId - El ID del pedido al que se añadirá el producto.
+         */
+        function abrirAgregarProducto(pedidoId) {
+            pedidoIdSeleccionado = pedidoId; // Almacenar el ID del pedido
+            document.getElementById('productoId').value = ""; // Limpiar el campo de ID de producto
+            document.getElementById('cantidadProducto').value = "1"; // Reset quantity for adding to existing
+            document.getElementById('addPedidoModal').style.display = "flex"; // Mostrar el modal
+        }
+
+        /**
+         * Carga los precios de un producto específico desde la API y los muestra en el modal de precios.
+         */
+        async function cargarPrecios() {
+            const productoId = document.getElementById('productoId').value.trim();
+            if (!productoId) {
+                alert('Por favor, ingrese un ID de producto válido.');
+                return;
+            }
+            try {
+                const res = await fetch(`http://localhost:3000/api/menu/${productoId}`);
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.mensaje || `Error HTTP! estado: ${res.status}`);
+                }
+                const producto = await res.json();
+                const contenedor = document.getElementById('preciosContainer');
+                contenedor.innerHTML = ''; // Limpiar contenedor de precios
+
+                // Si el producto no tiene precios, mostrar un mensaje
+                if (!producto.precios || producto.precios.length === 0) {
+                    contenedor.innerHTML = '<p style="text-align: center; color: #777;">No hay precios disponibles para este producto.</p>';
+                } else {
+                    producto.precios.forEach(precio => {
+                        const card = document.createElement('div');
+                        card.classList.add('price-card');
+                        card.innerHTML = `
+                            <h4>${producto.nombre}</h4>
+                            <p><strong>Tamaño:</strong> ${precio.tamano || 'Único'}</p>
+                            <p><strong>Precio:</strong> $${precio.precio.toLocaleString('es-CO')}</p>
+                            <button onclick="seleccionarPrecio('${productoId}', '${precio._id}')" class="modal-button price-card-button">Seleccionar</button>`;
+                        contenedor.appendChild(card);
+                    });
+                }
+                
+                document.getElementById('addPedidoModal').style.display = "none"; // Ocultar modal de añadir producto
+                document.getElementById('preciosModal').style.display = "flex"; // Mostrar modal de precios
+            } catch (err) {
+                console.error('Error al cargar los precios:', err);
+                alert('Error al cargar los precios: ' + err.message);
+            }
+        }
+
+
+        /**
+         * Selecciona un precio/tamaño y añade el producto al pedido.
+         * @param {string} productoId - El ID del producto.
+         * @param {string} precioId - El ID del precio/tamaño seleccionado.
+         */
+        async function seleccionarPrecio(productoId, precioId) {
+            const cantidadInput = document.getElementById('cantidadProducto');
+            const cantidad = parseInt(cantidadInput.value);
+
+            if (isNaN(cantidad) || cantidad < 1) {
+                alert('Por favor, ingrese una cantidad válida (mínimo 1).');
+                return;
+            }
+
+            try {
+                let endpoint;
+                let method = 'POST';
+                let bodyContent;
+
+                if (pedidoIdSeleccionado) {
+                    // Adding to an existing order
+                    endpoint = `http://localhost:3000/api/pedidos/${pedidoIdSeleccionado}/agregar-producto`;
+                    bodyContent = JSON.stringify({ productoId, precioId, cantidad });
+                } else {
+                    // Creating a new order with the product
+                    endpoint = `http://localhost:3000/api/pedidos`;
+                    bodyContent = JSON.stringify({ productoId, precioId, cantidad });
+                }
+                
+                const res = await fetch(endpoint, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: bodyContent
+                });
+
+                if (res.ok) {
+                    alert('Producto añadido al pedido exitosamente.');
+                    cerrarPreciosModal();
+                    document.getElementById('addPedidoModal').style.display = "none"; // Ensure add modal is also hidden
+                    cargarFacturas(); // Recargar las facturas para ver los cambios
+                } else {
+                    const errorData = await res.json();
+                    alert('Error al añadir el producto al pedido: ' + (errorData.mensaje || 'Error desconocido'));
+                }
+            } catch (err) {
+                console.error('Error al añadir el producto al pedido:', err);
+                alert('Error al añadir el producto al pedido. Intenta de nuevo.');
+            }
+        }
+
+        /**
+         * Carga y muestra las facturas (pedidos en preparación) en la página.
+         */
+        async function cargarFacturas() {
+            const facturasContainer = document.getElementById('facturas-container');
+            facturasContainer.innerHTML = '<p style="text-align: center; color: #555;">Cargando pedidos...</p>'; // Mensaje de carga
+
+            try {
+                const res = await fetch('http://localhost:3000/api/pedidos/en-preparacion'); // Obtiene solo pedidos en preparación
+                if (!res.ok) {
+                    throw new Error(`Error HTTP! estado: ${res.status}`);
+                }
+                const pedidos = await res.json();
+                
+                facturasContainer.innerHTML = ''; // Limpiar el contenedor
+
+                if (pedidos.length === 0) {
+                    facturasContainer.innerHTML = '<p style="text-align: center; color: #777;">No hay pedidos en preparación para mostrar.</p>';
+                    return;
+                }
+
+                pedidos.forEach(pedido => {
+                    const card = document.createElement('div');
+                    card.classList.add('factura-card');
+                    const fecha = new Date(pedido.fecha).toLocaleDateString('es-ES'); // Formatear fecha
+                    
+                    // Asegurarse de que el total exista, si no, calcularlo
+                    let total = pedido.total || 0;
+                    if (!pedido.total && pedido.items) {
+                        total = pedido.items.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+                    }
+
+                    const itemsHTML = pedido.items.map(item => {
+                        const subtotal = (item.precio || 0) * (item.cantidad || 0);
+                        return `<tr><td>${item.nombre || 'N/A'}</td><td>${item.cantidad || 0}</td><td>$${(item.precio || 0).toLocaleString('es-CO')}</td><td>$${subtotal.toLocaleString('es-CO')}</td></tr>`;
+                    }).join('');
+
+                    // Determinar si el botón de "Marcar como entregado" debe estar deshabilitado
+                    const isDelivered = pedido.estado === 'entregado';
+                    const deliveredClass = isDelivered ? 'estado entregado' : 'estado';
+                    const deliveredButtonState = isDelivered ? 'disabled' : '';
+
+
+                    card.innerHTML = `
+                        <h2>Factura Restaurante</h2>
+                        <div class="info">
+                            <p><strong>ID Pedido:</strong> ${pedido._id}</p>
+                            <p><strong>Cliente:</strong> ${pedido.cliente || 'Anónimo'}</p>
+                            <p><strong>Fecha:</strong> ${fecha}</p>
+                            <p class="${deliveredClass}">${pedido.estado || 'Desconocido'}</p>
+                        </div>
+                        <table>
+                            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
+                            <tbody>${itemsHTML}</tbody>
+                        </table>
+                        <p class="total">Total: $${total.toLocaleString('es-CO')}</p>
+                        <div class="footer">¡Gracias por su compra!</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                            <button onclick="abrirAgregarProducto('${pedido._id}')" class="modal-button add-product-button" style="flex: 1; margin-right: 5px;">Añadir Producto</button>
+                            <button onclick="openConfirmDeliveryModal('${pedido._id}')" class="modal-button mark-delivered-button" style="flex: 1; margin-left: 5px;" ${deliveredButtonState}>Marcar como entregado</button>
+                        </div>
+                    `;
+                    facturasContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Error al cargar facturas:', err);
+                facturasContainer.innerHTML = '<p style="text-align: center; color: red;">Error al cargar las facturas. Intenta de nuevo más tarde.</p>';
+            }
+        }
+
+        // Cargar las facturas al cargar la página
+        document.addEventListener('DOMContentLoaded', cargarFacturas);
+
+        // Cerrar modales al hacer clic fuera de ellos
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('addPedidoModal')) {
+                document.getElementById('addPedidoModal').style.display = "none";
+            }
+            if (event.target == document.getElementById('preciosModal')) {
+                document.getElementById('preciosModal').style.display = "none";
+            }
+            // Added closing for the new confirmation modal
+            if (event.target == document.getElementById('confirmDeliveryModal')) {
+                document.getElementById('confirmDeliveryModal').style.display = "none";
+                pedidoIdToConfirm = null; // Clear the ID if dismissed by clicking outside
+            }
+        }
+    </script>
+</body>
+</html>
